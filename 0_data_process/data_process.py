@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import pandas as pd
 
 
@@ -7,9 +8,70 @@ class DataProcess:
     def main(self):
         """Main program."""
 
-        file_paths = self.rummage_through()
+        # For each file with data
+        for ii in self.rummage_through()[0:4]:
 
-        return file_paths
+
+            _dic = self.read_excel_data_file(ii)
+
+        return _dic
+
+    @staticmethod
+    def create_conn():
+        conn = None
+        try:
+            conn = sqlite3.connect('force_curves')
+            return conn, conn.cursor()
+        except Exception as E:
+            print(E)
+
+        return
+
+    @staticmethod
+    def read_excel_data_file(file_path) -> dict:
+        """Return dictionary with data.
+
+            Parameters:
+
+            Returns:
+                Returns dictionary with keys ['Downstroke', 'Upstroke'] and values dataframe
+                with columns ['Force', 'Displacement', 'Switch_Name', 'Mode']
+        """
+
+        # Get name of switch
+        _df = pd.read_excel(file_path, header=None, usecols='B', skiprows=1,
+                            sheet_name=['DataTable'])
+        switch_name = _df['DataTable'].iloc[0, 0]
+
+        # Get dictionary with data from Excel. Keys are Downstroke, Upstroke
+        # and columns are 2 (force) and 11 (displacement).
+        _dic = pd.read_excel(file_path, header=None, usecols='C,L',
+                             skiprows=5, sheet_name=['Downstroke', 'Upstroke'])
+
+        # Rename columns and add switch name and mode
+        for kk, df in _dic.items():
+            df.rename(columns={'2': 'Force', '11': 'Displacement'}, inplace=True)
+            df['Switch_Name'] = switch_name
+            df['Mode'] = kk
+
+        return _dic
+
+    def create_table(self):
+
+        conn, cur = self.create_conn()
+
+        cur.execute(""" DROP TABLE IF EXISTS force_curves """)
+
+        _sql = """ CREATE TABLE force_curves(
+                    id INTEGER PRIMARY KEY,
+                    force REAL,
+                    displacement REAL,
+                    name CHAR(100))
+                    """
+
+        cur.execute(_sql)
+        cur.close()
+        conn.close()
 
     def rummage_through(self) -> list[str]:
         """Return a list with the file paths of all data file.
