@@ -8,12 +8,20 @@ class DataProcess:
     def main(self):
         """Main program."""
 
+        self.create_table()
+
+        conn, cur = self.create_conn()
+
         # For each file with data
         for ii in self.rummage_through()[0:4]:
 
 
             _dic = self.read_excel_data_file(ii)
 
+            self.add_switch_data_to_table(conn, cur, _dic)
+
+        conn.commit()
+        conn.close()
         return _dic
 
     @staticmethod
@@ -24,6 +32,15 @@ class DataProcess:
             return conn, conn.cursor()
         except Exception as E:
             print(E)
+
+        return
+
+    def add_switch_data_to_table(self, conn, cur, dic):
+
+        for kk, df in dic.items():
+            df.to_sql('force_curves', conn, if_exists='append', index=False)
+
+
 
         return
 
@@ -48,11 +65,11 @@ class DataProcess:
         _dic = pd.read_excel(file_path, header=None, usecols='C,L',
                              skiprows=5, sheet_name=['Downstroke', 'Upstroke'])
 
-        # Rename columns and add switch name and mode
+        # Rename columns and add switch name and mode to the df
         for kk, df in _dic.items():
-            df.rename(columns={'2': 'Force', '11': 'Displacement'}, inplace=True)
-            df['Switch_Name'] = switch_name
-            df['Mode'] = kk
+            df.rename(columns={2: 'Force', 11: 'Displacement'}, inplace=True)
+            df['switch_name'] = switch_name
+            df['mode'] = kk
 
         return _dic
 
@@ -63,10 +80,10 @@ class DataProcess:
         cur.execute(""" DROP TABLE IF EXISTS force_curves """)
 
         _sql = """ CREATE TABLE force_curves(
-                    id INTEGER PRIMARY KEY,
-                    force REAL,
-                    displacement REAL,
-                    name CHAR(100))
+                    force CHAR(100),
+                    displacement CHAR(100),
+                    switch_name CHAR(100),
+                    mode CHAR(100))
                     """
 
         cur.execute(_sql)
