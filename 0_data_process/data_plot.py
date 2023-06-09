@@ -1,30 +1,54 @@
+import sys
+from importlib import reload
 import sqlite3
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Dict
+from switches_exceptions import *
+reload(sys.modules['switches_exceptions'])
+from switches_exceptions import *
+
 
 class DataPlot:
 
-    def __init__(self):
+    def __init__(self, switches_id_todo=None):
+
         self.conn, self.cur = self.connect_db()
         self.switch_dic = self.all_switches_dic()
+        if switches_id_todo is None:
+            self.switches_id_todo = self.run_exceptions([100, 200, 300, 400, 500])
+
+    def run_exceptions(self, switches_id_todo):
+
+        while True:
+            try:
+                if not all(isinstance(ii, int) for ii in switches_id_todo):
+                    raise SwitchIdNotInt(switches_id_todo)
+                if max(switches_id_todo) > len(self.switch_dic) or min(switches_id_todo) < 1:
+                    raise SwitchIdOutsideRange(switches_id_todo)
+                if len(switches_id_todo) > 5:
+                    raise NumberOfSwitches(switches_id_todo)
+                break
+            except SwitchesExceptions as E:
+                switches_id_todo = E.correction(switches_id_todo, min=1, max=len(self.switch_dic))
+
+        return switches_id_todo
 
     def plot_switches(self):
 
         fig, ax = plt.subplots(nrows=2, ncols=1, dpi=100, figsize=(8, 12))
         legend_cols = ["#648ace", "#c2843c", "#ab62c0", "#6ca659", "#ca556a"]
-        switch_id_todo = [19, 221, 4, 601, 398]
+
+        figure_switches_names = [self.switch_dic[ii] for ii in self.switches_id_todo]
 
         for idx0, mode in enumerate(['Downstroke', 'Upstroke']):
-            for idx1, ii in enumerate(switch_id_todo):
+            for idx1, ii in enumerate(self.switches_id_todo):
                 switch_data = self.get_switch_data(ii, mode)
 
                 ax[idx0].plot(switch_data[:, 1], switch_data[:, 0], color=legend_cols[idx1],
                               lw=2)
 
-            figure_switches_names = [self.switch_dic[ii] for ii in switch_id_todo]
             self.work_figure(ax[idx0], figure_switches_names, mode)
 
     @staticmethod
@@ -47,7 +71,7 @@ class DataPlot:
         if mode == 'Upstroke':
             ax.invert_xaxis()
         else:
-            ax.legend(figure_switches_names)
+            ax.legend(figure_switches_names, loc=2)
 
         return
 
