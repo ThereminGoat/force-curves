@@ -26,7 +26,8 @@ class DataPlot:
             Parameters:
                 switches_id_todo: List of the IDs of the switches to do
             Returns:
-                switches_id_todo: List of the IDs of the switches to do post-exceptions."""
+                switches_id_todo: List of the IDs of the switches to do post-exceptions.
+        """
         while True:
             try:
                 if not all(isinstance(ii, int) for ii in switches_id_todo):
@@ -45,7 +46,8 @@ class DataPlot:
         """Do plots.
             Parameters:
             Returns:
-                None"""
+                None
+        """
         fig, ax = plt.subplots(nrows=2, ncols=1, dpi=100, figsize=(8, 12))
         legend_cols = ["#648ace", "#c2843c", "#ab62c0", "#6ca659", "#ca556a"]
 
@@ -69,7 +71,8 @@ class DataPlot:
                 figure_switches_names: List with names of the plotted switches
                 mode: Downstroke/Upstroke
             Returns:
-                None"""
+                None
+        """
         ax.set_xlabel('Displacement (mm)', fontsize=13)
         ax.set_ylabel('Force (gf)', fontsize=13)
         ax.set_title('Force Curves, {}'.format(mode), fontsize=14)
@@ -93,7 +96,8 @@ class DataPlot:
                 idx: switch id
                 mode: 'Downstroke'/'Upstroke'
             Return:
-                Array with force and displacement data for the switch to be plotted."""
+                Array with force and displacement data for the switch to be plotted.
+        """
         _query = """SELECT force, displacement
                     FROM force_curves
                     WHERE switch_name = ? AND mode = ?"""
@@ -109,7 +113,8 @@ class DataPlot:
             for all switches.
             Parameters:
             Returns:
-                Dictionary with keys the index, and values the name of the switch."""
+                Dictionary with keys the index, and values the name of the switch.
+        """
         switch_names = self.get_all_switch_names()
         # Index for the switches
         idx = list(range(1, len(switch_names) + 1))
@@ -121,7 +126,8 @@ class DataPlot:
         """Return all switch names in the db.
             Parameters:
             Returns:
-                List with all switch names in the list."""
+                List with all switch names in the list.
+        """
         _query = 'SELECT DISTINCT(switch_name) FROM force_curves'
         df = pd.read_sql_query(_query, self.conn)
 
@@ -143,3 +149,4 @@ class DataPlot:
             print('Could not find db, do not bother')
 
         return
+
